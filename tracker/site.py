@@ -61,10 +61,10 @@ def price_chart_json(closes: pd.Series, title: str) -> str:
             line=dict(color=_COLORS[n], width=1.3),
         ))
     fig.update_layout(**_base_layout(title))
-    fig.update_layout(margin=dict(t=64))
-    # 按鈕靠右上；y 降低以免被固定在最上方的 Plotly 工具列擋住
+    fig.update_layout(margin=dict(t=78), title=dict(y=0.97))
+    # 按鈕移到左側、標題正下方；Plotly 工具列固定在右上角，左右錯開就不會重疊
     fig.update_xaxes(rangeselector=dict(
-        x=1, xanchor="right", y=1.04, yanchor="bottom",
+        x=0, xanchor="left", y=0.86, yanchor="top",
         buttons=[
             dict(count=3, label="3M", step="month", stepmode="backward"),
             dict(count=6, label="6M", step="month", stepmode="backward"),
