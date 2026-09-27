@@ -102,6 +102,7 @@
         <span class="badge {{ business_cycle.light | zone_class }}">{{ business_cycle.light }}燈</span>
       </div>
     </div>
+    {% if business_cycle_chart %}<div class="chart tall" id="{{ business_cycle_chart.id }}"></div>{% endif %}
     <p class="meta">來源：國家發展委員會（政府資料開放平臺）。分數 9–45，燈號對應區間：藍 ≤16、黃藍 17–22、綠 23–31、黃紅 32–37、紅 ≥38。</p>
     {% else %}
     <p class="na">資料取得失敗</p>
@@ -155,6 +156,8 @@
   var figs = [
     {% for m in breadth %}{ id: "{{ m.id }}", fig: {{ m.chart | safe }} },
     {% endfor %}
+    {% if business_cycle_chart %}{ id: "{{ business_cycle_chart.id }}", fig: {{ business_cycle_chart.json | safe }} },
+    {% endif %}
     {% for c in price_charts %}{ id: "{{ c.id }}", fig: {{ c.json | safe }} },
     {% endfor %}
   ];

@@ -12,7 +12,7 @@ import pandas as pd
 from tracker.bias import calc_bias
 from tracker.breadth_tw import compute_tw_breadth, load_history, update_history
 from tracker.breadth_us import compute_us_breadth
-from tracker.business_cycle import fetch_signal
+from tracker.business_cycle import fetch_history
 from tracker.config import (
     BIAS_TARGETS,
     CHART_TARGETS,
@@ -28,7 +28,7 @@ from tracker.config import (
 from tracker.history import append_snapshot
 from tracker.pe import fetch_pe
 from tracker.prices import fetch_close
-from tracker.site import breadth_chart_json, price_chart_json, render
+from tracker.site import breadth_chart_json, business_cycle_chart_json, price_chart_json, render
 
 
 def main() -> int:
@@ -64,11 +64,21 @@ def main() -> int:
         fatal.append(f"台股上市市場寬度計算失敗：{exc}")
 
     # ---- 景氣對策信號 ----
+    business_cycle, business_cycle_chart = None, None
     try:
-        business_cycle = fetch_signal()
+        bc_history = fetch_history()
+        latest = bc_history.iloc[-1]
+        business_cycle = {
+            "date": latest["date"].strftime("%Y-%m"),
+            "score": float(latest["score"]),
+            "light": latest["light"],
+        }
+        business_cycle_chart = {
+            "id": "chart-business-cycle",
+            "json": business_cycle_chart_json(bc_history.tail(12)),
+        }
     except Exception as exc:
         warnings.append(f"景氣對策信號取得失敗：{exc}")
-        business_cycle = None
 
     # ---- BIAS／PE ----
     daily_rows, daily_closes, pe_snapshot = [], {}, []
@@ -109,6 +119,7 @@ def main() -> int:
         "updated_at": now.strftime("%Y-%m-%d %H:%M"),
         "breadth": breadth,
         "business_cycle": business_cycle,
+        "business_cycle_chart": business_cycle_chart,
         "bias_tables": bias_tables,
         "price_charts": price_charts,
         "warnings": warnings,

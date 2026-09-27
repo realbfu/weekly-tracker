@@ -17,6 +17,10 @@ ROOT = Path(__file__).resolve().parent.parent
 # 兩種佈景都看得清楚的中間色調
 _COLORS = {"close": "#7f8c9b", 20: "#2f7de1", 50: "#e08a00", 60: "#e08a00", 120: "#2aa876", 200: "#c2408b", 240: "#c2408b"}
 
+# 景氣對策信號燈號配色與分數區間（國發會公告門檻）
+_LIGHT_COLORS = {"紅": "#d64545", "黃紅": "#e0a300", "綠": "#2aa876", "黃藍": "#4aa8d8", "藍": "#2f5fa8"}
+_LIGHT_BANDS = [(9, 16, "藍"), (17, 22, "黃藍"), (23, 31, "綠"), (32, 37, "黃紅"), (38, 45, "紅")]
+
 
 def _base_layout(title: str) -> dict:
     return dict(
@@ -45,6 +49,23 @@ def breadth_chart_json(series: pd.DataFrame, periods: Iterable[int], levels, tit
         fig.add_hline(y=lv, line=dict(dash="dot", width=1, color="#8a8f98"))
     fig.update_layout(**_base_layout(title))
     fig.update_yaxes(range=[0, 100], ticksuffix="%")
+    return pio.to_json(fig)
+
+
+def business_cycle_chart_json(history: pd.DataFrame, title: str = "景氣對策信號綜合分數（近一年）") -> str:
+    """折線圖：底色依分數區間畫出紅黃綠藍分區，資料點依當月燈號上色，方便一眼判讀。"""
+    fig = go.Figure()
+    for lo, hi, light in _LIGHT_BANDS:
+        fig.add_hrect(y0=lo - 0.5, y1=hi + 0.5, fillcolor=_LIGHT_COLORS[light], opacity=0.14, line_width=0)
+    fig.add_trace(go.Scatter(
+        x=history["date"], y=history["score"], mode="lines+markers", name="綜合判斷分數",
+        line=dict(color="#7f8c9b", width=2),
+        marker=dict(size=10, color=[_LIGHT_COLORS[l] for l in history["light"]], line=dict(width=1, color="#ffffff")),
+        text=history["light"] + "燈",
+        hovertemplate="%{x|%Y-%m}　%{y:.0f} 分　%{text}<extra></extra>",
+    ))
+    fig.update_layout(**_base_layout(title))
+    fig.update_yaxes(range=[9, 45], dtick=5)
     return pio.to_json(fig)
 
 

@@ -5,7 +5,7 @@ import pytest
 from tracker.bias import calc_bias
 from tracker.breadth import breadth_series, tw_long_term_signal, tw_zone, us_zone
 from tracker.breadth_tw import parse_mi_index
-from tracker.business_cycle import parse_signal_csv
+from tracker.business_cycle import parse_signal_history
 
 
 def _series(values):
@@ -117,18 +117,21 @@ def test_parse_mi_index_other_errors_raise_instead_of_looking_like_holiday():
         parse_mi_index(_payload(10))  # 檔數過少，疑似格式異常
 
 
-def test_parse_signal_csv_skips_unpublished_latest_month():
+def test_parse_signal_history_skips_unpublished_latest_month():
     csv_text = (
         "Date,領先指標綜合指數,景氣對策信號綜合分數,景氣對策信號\n"
-        "202606,135.79,41,紅\n"
+        "202606,135.79,39,紅\n"
         "202607,138.63,41,紅\n"
         "202608,140.0,-,-\n"  # 當月尚未公布
     )
-    result = parse_signal_csv(csv_text.encode("utf-8-sig"))
-    assert result == {"date": "2026-07", "score": 41.0, "light": "紅"}
+    df = parse_signal_history(csv_text.encode("utf-8-sig"))
+    assert len(df) == 2
+    last = df.iloc[-1]
+    assert last["date"].strftime("%Y-%m") == "2026-07"
+    assert last["score"] == 41.0 and last["light"] == "紅"
 
 
-def test_parse_signal_csv_all_missing_raises():
+def test_parse_signal_history_all_missing_raises():
     csv_text = "Date,景氣對策信號綜合分數,景氣對策信號\n202608,-,-\n"
     with pytest.raises(RuntimeError):
-        parse_signal_csv(csv_text.encode("utf-8-sig"))
+        parse_signal_history(csv_text.encode("utf-8-sig"))
