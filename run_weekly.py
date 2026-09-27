@@ -19,6 +19,8 @@ from tracker.config import (
     DAILY_BIAS_THRESHOLDS,
     DAILY_MA,
     DAILY_PERIOD,
+    FX_OVERLAY_SYMBOL,
+    FX_TARGET,
     TIMEZONE,
     TW_BREADTH_LEVELS,
     TW_BREADTH_MA,
@@ -107,13 +109,25 @@ def main() -> int:
         {"title": "日線 BIAS／PE", "unit": "日", "periods": DAILY_MA, "thresholds": DAILY_BIAS_THRESHOLDS, "rows": daily_rows},
     ]
 
+    # ---- 匯率（疊加在加權指數走勢圖）----
+    fx_name, fx_symbol = FX_TARGET
+    try:
+        fx_closes = fetch_close(fx_symbol, DAILY_PERIOD, "1d")
+    except Exception as exc:
+        warnings.append(f"{fx_name} 匯率取得失敗：{exc}")
+        fx_closes = None
+
     # ---- 價格走勢圖 ----
     price_charts = []
     for i, (name, symbol) in enumerate(CHART_TARGETS):
         closes = daily_closes.get(symbol)
         if closes is None:
             continue
-        price_charts.append({"id": f"chart-price-{i}", "json": price_chart_json(closes, name)})
+        if symbol == FX_OVERLAY_SYMBOL and fx_closes is not None:
+            chart_json = price_chart_json(closes, name, fx=fx_closes, fx_name=fx_name)
+        else:
+            chart_json = price_chart_json(closes, name)
+        price_charts.append({"id": f"chart-price-{i}", "json": chart_json})
 
     path = render({
         "updated_at": now.strftime("%Y-%m-%d %H:%M"),

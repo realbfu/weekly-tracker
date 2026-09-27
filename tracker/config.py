@@ -65,6 +65,10 @@ CHART_TARGETS = [
 ]
 CHART_MA = (20, 60, 200)
 
+# 疊加在加權指數走勢圖上的匯率（副座標軸）
+FX_OVERLAY_SYMBOL = "^TWII"
+FX_TARGET = ("USD/TWD", "USDTWD=X")
+
 # ---------- 景氣對策信號 ----------
 # 政府資料開放平台「景氣指標及燈號」資料集（國家發展委員會提供，每月更新）
 NDC_DATASET_API = "https://data.gov.tw/api/v2/rest/dataset/6099"
