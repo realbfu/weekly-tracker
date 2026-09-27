@@ -52,12 +52,8 @@ BIAS_TARGETS = [
 DAILY_MA = (20, 60, 200)
 DAILY_BIAS_THRESHOLDS = {20: 10.0, 60: 15.0, 200: 20.0}
 
-WEEKLY_MA = (20, 60, 120, 240)
-WEEKLY_BIAS_THRESHOLDS = {20: 15.0, 60: 30.0, 120: 50.0, 240: 80.0}
-
-# 抓取範圍：日線 200 日均線約需 290 曆日；週線 240 週約需 4.6 年
+# 抓取範圍：日線 200 日均線約需 290 曆日
 DAILY_PERIOD = "2y"
-WEEKLY_PERIOD = "6y"
 
 # ---------- 價格走勢圖 ----------
 CHART_TARGETS = [

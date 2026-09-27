@@ -23,9 +23,6 @@ from tracker.config import (
     TW_BREADTH_MA,
     US_BREADTH_LEVELS,
     US_BREADTH_MA,
-    WEEKLY_BIAS_THRESHOLDS,
-    WEEKLY_MA,
-    WEEKLY_PERIOD,
 )
 from tracker.history import append_snapshot
 from tracker.pe import fetch_pe
@@ -66,7 +63,7 @@ def main() -> int:
         fatal.append(f"台股上市市場寬度計算失敗：{exc}")
 
     # ---- BIAS ----
-    daily_rows, weekly_rows, daily_closes = [], [], {}
+    daily_rows, daily_closes = [], {}
     for name, symbol in BIAS_TARGETS:
         try:
             closes = fetch_close(symbol, DAILY_PERIOD, "1d")
@@ -75,20 +72,9 @@ def main() -> int:
         except Exception as exc:
             warnings.append(f"{name} 日線 BIAS 取得失敗：{exc}")
             daily_rows.append({"name": name, "data": None})
-        try:
-            closes = fetch_close(symbol, WEEKLY_PERIOD, "1wk")
-            weekly = calc_bias(closes, WEEKLY_MA, WEEKLY_BIAS_THRESHOLDS)
-            # Yahoo 週線以週一標日期；最後一根週線的收盤即最新收盤價，改顯示實際資料日
-            if symbol in daily_closes:
-                weekly["date"] = daily_closes[symbol].index[-1].strftime("%Y-%m-%d")
-            weekly_rows.append({"name": name, "data": weekly})
-        except Exception as exc:
-            warnings.append(f"{name} 週線 BIAS 取得失敗：{exc}")
-            weekly_rows.append({"name": name, "data": None})
 
     bias_tables = [
         {"title": "日線 BIAS", "unit": "日", "periods": DAILY_MA, "thresholds": DAILY_BIAS_THRESHOLDS, "rows": daily_rows},
-        {"title": "週線 BIAS", "unit": "週", "periods": WEEKLY_MA, "thresholds": WEEKLY_BIAS_THRESHOLDS, "rows": weekly_rows},
     ]
 
     # ---- PE ----
