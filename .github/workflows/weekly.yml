@@ -1,0 +1,60 @@
+name: weekly-tracker
+
+on:
+  schedule:
+    # 週六 08:00 台北時間（UTC 00:00），台美週五收盤皆已完成
+    - cron: "0 0 * * 6"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - run: python -m pytest -q
+
+      # 失敗時（例如被限流）此步驟非 0 結束，後續不會 commit 與發佈，上次成功的頁面維持不變
+      - run: python run_weekly.py
+
+      - name: 提交資料變更
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "資料無變更"
+          else
+            git commit -m "chore: 更新每週追蹤資料 $(TZ=Asia/Taipei date +%F)"
+            git push
+          fi
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

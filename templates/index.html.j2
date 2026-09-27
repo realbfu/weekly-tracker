@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>每週投資追蹤</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --text: #1c2430; --muted: #667085; --border: #e3e6ec; --grid: #e6e9ef;
+    --hot-bg: #f4cccc; --hot-fg: #7a1f1f;
+    --cold-bg: #cfe2f3; --cold-fg: #1b4468;
+    --good-bg: #d9ead3; --good-fg: #23531a;
+    --warn-bg: #fff2cc; --warn-fg: #6b4e00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1419; --card: #182028; --text: #e6e9ee; --muted: #9aa4b2; --border: #2a3441; --grid: #2a3441;
+      --hot-bg: #5a2727; --hot-fg: #ffd0d0;
+      --cold-bg: #23445f; --cold-fg: #cfe6fb;
+      --good-bg: #2a4a26; --good-fg: #d5f0cf;
+      --warn-bg: #5a4a17; --warn-fg: #ffeaa8;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1419; --card: #182028; --text: #e6e9ee; --muted: #9aa4b2; --border: #2a3441; --grid: #2a3441;
+    --hot-bg: #5a2727; --hot-fg: #ffd0d0;
+    --cold-bg: #23445f; --cold-fg: #cfe6fb;
+    --good-bg: #2a4a26; --good-fg: #d5f0cf;
+    --warn-bg: #5a4a17; --warn-fg: #ffeaa8;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 36px 0 12px; }
+  .sub { color: var(--muted); margin: 0 0 16px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .card h3 { font-size: 15px; margin: 0 0 12px; }
+  .meta { color: var(--muted); font-size: 13px; font-weight: normal; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 8px; }
+  .tile { border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+  .tile .label { color: var(--muted); font-size: 13px; }
+  .tile .value { font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tile .small { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; }
+  .hot { background: var(--hot-bg); color: var(--hot-fg); }
+  .cold { background: var(--cold-bg); color: var(--cold-fg); }
+  .good { background: var(--good-bg); color: var(--good-fg); }
+  .warn { background: var(--warn-bg); color: var(--warn-fg); }
+  .banner { border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; font-size: 14px; }
+  .scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  caption { text-align: left; font-weight: 600; padding-bottom: 8px; }
+  th, td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 500; font-size: 13px; }
+  td.na { color: var(--muted); }
+  .charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .chart { height: 340px; }
+  .chart.tall { height: 320px; }
+  footer { color: var(--muted); font-size: 12px; margin-top: 32px; }
+  @media (max-width: 760px) { .charts { grid-template-columns: 1fr; } .tile .value { font-size: 24px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>每週投資追蹤</h1>
+  <p class="sub">更新於 {{ updated_at }}（台北時間）　市場寬度、BIAS／PE、價格走勢</p>
+
+  {% for msg in fatal %}<div class="banner hot">⚠ {{ msg }}</div>{% endfor %}
+  {% for msg in warnings %}<div class="banner warn">注意：{{ msg }}</div>{% endfor %}
+
+  <h2>市場寬度</h2>
+  {% for m in breadth %}
+  <section class="card" aria-label="{{ m.title }}">
+    <h3>{{ m.title }} <span class="meta">資料日 {{ m.summary.date }}　有效樣本 {{ m.summary.valid }} 檔</span></h3>
+    <div class="tiles">
+      {% for n, v in m.summary['values'].items() %}
+      <div class="tile">
+        <div class="label">站上 {{ n }} 日均線</div>
+        <div class="value">{{ v.pct | fmt(1) }}%</div>
+        <span class="badge {{ v.zone | zone_class }}">{{ v.zone }}</span>
+        <div class="small">{{ v.above }} / {{ m.summary.valid }} 檔　較上週 {{ v.delta | fmt(1, true) }} pt</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% if m.summary.long_term %}<p><span class="badge {{ 'hot' if '頭部' in m.summary.long_term else 'cold' }}">{{ m.summary.long_term }}</span></p>{% endif %}
+    <div class="chart tall" id="{{ m.id }}"></div>
+    {% if m.note %}<p class="meta">{{ m.note }}</p>{% endif %}
+  </section>
+  {% endfor %}
+
+  <h2>BIAS 乖離率</h2>
+  {% for t in bias_tables %}
+  <section class="card scroll">
+    <table>
+      <caption>{{ t.title }}</caption>
+      <thead><tr>
+        <th scope="col">標的</th><th scope="col">資料日</th><th scope="col">收盤</th>
+        {% for n in t.periods %}<th scope="col">{{ n }}{{ t.unit }} <span class="meta">±{{ t.thresholds[n] | fmt(0) }}%</span></th>{% endfor %}
+      </tr></thead>
+      <tbody>
+      {% for r in t.rows %}
+        {% if r.data %}
+        <tr>
+          <th scope="row" style="color:var(--text);font-weight:500">{{ r.name }}</th>
+          <td>{{ r.data.date }}</td><td>{{ r.data.close | fmt(2) }}</td>
+          {% for n in t.periods %}
+            {% set a = r.data.alert[n] %}
+            <td class="{{ a or '' }}{{ ' na' if r.data.bias[n] is none else '' }}">{{ r.data.bias[n] | fmt(2, true) }}%</td>
+          {% endfor %}
+        </tr>
+        {% else %}
+        <tr><th scope="row" style="color:var(--text);font-weight:500">{{ r.name }}</th><td class="na" colspan="{{ 3 + t.periods | length - 1 }}">取得失敗</td></tr>
+        {% endif %}
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endfor %}
+  <p class="meta"><span class="badge hot">紅</span> 正乖離超過門檻　<span class="badge cold">藍</span> 負乖離超過門檻　BIAS = (收盤 − 均線) ÷ 均線</p>
+
+  <h2>本益比 PE</h2>
+  <section class="card scroll">
+    <table>
+      <caption>Trailing／Forward PE（Yahoo Finance）</caption>
+      <thead><tr><th scope="col">標的</th><th scope="col">Trailing PE</th><th scope="col">Forward PE</th><th scope="col">備註</th></tr></thead>
+      <tbody>
+      {% for r in pe_rows %}
+        <tr>
+          <th scope="row" style="color:var(--text);font-weight:500">{{ r.name }}</th>
+          <td class="{{ 'na' if r.trailing is none else '' }}">{{ r.trailing | fmt(2) }}</td>
+          <td class="{{ 'na' if r.forward is none else '' }}">{{ r.forward | fmt(2) }}</td>
+          <td class="na" style="text-align:left">{{ r.note }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <h2>價格走勢</h2>
+  <div class="charts">
+    {% for c in price_charts %}<div class="card"><div class="chart" id="{{ c.id }}"></div></div>{% endfor %}
+  </div>
+
+  <footer>資料來源：Yahoo Finance、臺灣證券交易所（TWSE）。僅供個人追蹤參考，不構成投資建議。</footer>
+</main>
+
+<script>
+(function () {
+  var figs = [
+    {% for m in breadth %}{ id: "{{ m.id }}", fig: {{ m.chart | safe }} },
+    {% endfor %}
+    {% for c in price_charts %}{ id: "{{ c.id }}", fig: {{ c.json | safe }} },
+    {% endfor %}
+  ];
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function themeUpdate() {
+    return {
+      "font.color": css("--text"),
+      "xaxis.gridcolor": css("--grid"), "yaxis.gridcolor": css("--grid"),
+      "xaxis.linecolor": css("--border"), "yaxis.linecolor": css("--border"),
+      "xaxis.rangeselector.bgcolor": css("--card"),
+      "xaxis.rangeselector.activecolor": css("--border"),
+      "xaxis.rangeselector.font.color": css("--text")
+    };
+  }
+  figs.forEach(function (f) {
+    Plotly.newPlot(f.id, f.fig.data, f.fig.layout, { responsive: true, displaylogo: false }).then(function () {
+      Plotly.relayout(f.id, themeUpdate());
+    });
+  });
+  var mq = window.matchMedia("(prefers-color-scheme: dark)");
+  var repaint = function () { figs.forEach(function (f) { Plotly.relayout(f.id, themeUpdate()); }); };
+  if (mq.addEventListener) mq.addEventListener("change", repaint);
+})();
+</script>
+</body>
+</html>
