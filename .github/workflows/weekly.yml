@@ -2,22 +2,23 @@ name: weekly-tracker
 
 on:
   schedule:
-    # 週六 08:00 台北時間（UTC 00:00），台美週五收盤皆已完成
-    - cron: "0 0 * * 6"
+    # 週六 06:40 台北時間（週五 22:40 UTC）。美股週五收盤約為台北週六 04:00–05:00，台股週五 13:30 已收盤。
+    # GitHub 排程常延遲 5–20 分鐘（整點尤其擁擠），故提早 20 分鐘，讓頁面大約在 07:00 前後更新。
+    - cron: "40 22 * * 5"
   workflow_dispatch:
 
 permissions:
   contents: write
   pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: weekly-tracker
   cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -33,11 +34,15 @@ jobs:
       # 失敗時（例如被限流）此步驟非 0 結束，後續不會 commit 與發佈，上次成功的頁面維持不變
       - run: python run_weekly.py
 
-      - name: 提交資料變更
+      # Pages 由 main 分支根目錄發佈，故把產生的頁面放到根目錄
+      - name: 更新根目錄 index.html
+        run: cp site/index.html index.html
+
+      - name: 提交資料與頁面變更
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/
+          git add data/ index.html
           if git diff --cached --quiet; then
             echo "資料無變更"
           else
@@ -45,16 +50,8 @@ jobs:
             git push
           fi
 
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      # 以 GITHUB_TOKEN 推送不一定會觸發 Pages 建置，主動要求一次以確保上線
+      - name: 觸發 Pages 建置
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds"
