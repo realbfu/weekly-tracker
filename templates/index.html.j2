@@ -39,6 +39,7 @@
   .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
   .card h3 { font-size: 15px; margin: 0 0 12px; }
   .meta { color: var(--muted); font-size: 13px; font-weight: normal; }
+  .meta a { color: inherit; }
   .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 8px; }
   .tile { border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
   .tile .label { color: var(--muted); font-size: 13px; }
@@ -104,6 +105,7 @@
     </div>
     {% if business_cycle_chart %}<div class="chart tall" id="{{ business_cycle_chart.id }}"></div>{% endif %}
     <p class="meta">來源：國家發展委員會（政府資料開放平臺）。分數 9–45，燈號對應區間：藍 ≤16、黃藍 17–22、綠 23–31、黃紅 32–37、紅 ≥38。</p>
+    <p class="meta">原始資料：<a href="https://index.ndc.gov.tw/n/zh_tw/data/eco" target="_blank" rel="noopener">景氣指標查詢系統</a></p>
     {% else %}
     <p class="na">資料取得失敗</p>
     {% endif %}
