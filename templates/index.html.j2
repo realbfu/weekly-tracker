@@ -92,7 +92,7 @@
   </section>
   {% endfor %}
 
-  <h2>BIAS 乖離率</h2>
+  <h2>BIAS／PE</h2>
   {% for t in bias_tables %}
   <section class="card scroll">
     <table>
@@ -100,45 +100,31 @@
       <thead><tr>
         <th scope="col">標的</th><th scope="col">資料日</th><th scope="col">收盤</th>
         {% for n in t.periods %}<th scope="col">{{ n }}{{ t.unit }} <span class="meta">±{{ t.thresholds[n] | fmt(0) }}%</span></th>{% endfor %}
+        <th scope="col">Trailing PE</th><th scope="col">Forward PE</th><th scope="col">備註</th>
       </tr></thead>
       <tbody>
       {% for r in t.rows %}
-        {% if r.data %}
         <tr>
           <th scope="row" style="color:var(--text);font-weight:500">{{ r.name }}</th>
+          {% if r.data %}
           <td>{{ r.data.date }}</td><td>{{ r.data.close | fmt(2) }}</td>
           {% for n in t.periods %}
             {% set a = r.data.alert[n] %}
             <td class="{{ a or '' }}{{ ' na' if r.data.bias[n] is none else '' }}">{{ r.data.bias[n] | fmt(2, true) }}%</td>
           {% endfor %}
+          {% else %}
+          <td class="na" colspan="{{ 2 + t.periods | length }}">BIAS 取得失敗</td>
+          {% endif %}
+          <td class="{{ 'na' if r.pe.trailing is none else '' }}">{{ r.pe.trailing | fmt(2) }}</td>
+          <td class="{{ 'na' if r.pe.forward is none else '' }}">{{ r.pe.forward | fmt(2) }}</td>
+          <td class="na" style="text-align:left">{{ r.pe.note }}</td>
         </tr>
-        {% else %}
-        <tr><th scope="row" style="color:var(--text);font-weight:500">{{ r.name }}</th><td class="na" colspan="{{ 3 + t.periods | length - 1 }}">取得失敗</td></tr>
-        {% endif %}
       {% endfor %}
       </tbody>
     </table>
   </section>
   {% endfor %}
-  <p class="meta"><span class="badge hot">紅</span> 正乖離超過門檻　<span class="badge cold">藍</span> 負乖離超過門檻　BIAS = (收盤 − 均線) ÷ 均線</p>
-
-  <h2>本益比 PE</h2>
-  <section class="card scroll">
-    <table>
-      <caption>Trailing／Forward PE（Yahoo Finance）</caption>
-      <thead><tr><th scope="col">標的</th><th scope="col">Trailing PE</th><th scope="col">Forward PE</th><th scope="col">備註</th></tr></thead>
-      <tbody>
-      {% for r in pe_rows %}
-        <tr>
-          <th scope="row" style="color:var(--text);font-weight:500">{{ r.name }}</th>
-          <td class="{{ 'na' if r.trailing is none else '' }}">{{ r.trailing | fmt(2) }}</td>
-          <td class="{{ 'na' if r.forward is none else '' }}">{{ r.forward | fmt(2) }}</td>
-          <td class="na" style="text-align:left">{{ r.note }}</td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </section>
+  <p class="meta"><span class="badge hot">紅</span> 正乖離超過門檻　<span class="badge cold">藍</span> 負乖離超過門檻　BIAS = (收盤 − 均線) ÷ 均線　PE 資料來源：Yahoo Finance</p>
 
   <h2>價格走勢</h2>
   <div class="charts">

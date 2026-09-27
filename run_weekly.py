@@ -62,34 +62,32 @@ def main() -> int:
     except Exception as exc:
         fatal.append(f"台股上市市場寬度計算失敗：{exc}")
 
-    # ---- BIAS ----
-    daily_rows, daily_closes = [], {}
+    # ---- BIAS／PE ----
+    daily_rows, daily_closes, pe_snapshot = [], {}, []
     for name, symbol in BIAS_TARGETS:
         try:
             closes = fetch_close(symbol, DAILY_PERIOD, "1d")
             daily_closes[symbol] = closes
-            daily_rows.append({"name": name, "data": calc_bias(closes, DAILY_MA, DAILY_BIAS_THRESHOLDS)})
+            bias_data = calc_bias(closes, DAILY_MA, DAILY_BIAS_THRESHOLDS)
         except Exception as exc:
             warnings.append(f"{name} 日線 BIAS 取得失敗：{exc}")
-            daily_rows.append({"name": name, "data": None})
+            bias_data = None
 
-    bias_tables = [
-        {"title": "日線 BIAS", "unit": "日", "periods": DAILY_MA, "thresholds": DAILY_BIAS_THRESHOLDS, "rows": daily_rows},
-    ]
-
-    # ---- PE ----
-    pe_rows, pe_snapshot = [], []
-    for name, symbol in BIAS_TARGETS:
         try:
             pe = fetch_pe(symbol)
         except Exception as exc:
             warnings.append(f"{name} PE 取得失敗：{exc}")
             pe = {"trailing": None, "forward": None, "note": "取得失敗"}
-        pe_rows.append({"name": name, **pe})
+
+        daily_rows.append({"name": name, "data": bias_data, "pe": pe})
         pe_snapshot.append({
             "date": today.isoformat(), "symbol": symbol,
             "trailing_pe": pe["trailing"], "forward_pe": pe["forward"],
         })
+
+    bias_tables = [
+        {"title": "日線 BIAS／PE", "unit": "日", "periods": DAILY_MA, "thresholds": DAILY_BIAS_THRESHOLDS, "rows": daily_rows},
+    ]
 
     # ---- 價格走勢圖 ----
     price_charts = []
@@ -103,7 +101,6 @@ def main() -> int:
         "updated_at": now.strftime("%Y-%m-%d %H:%M"),
         "breadth": breadth,
         "bias_tables": bias_tables,
-        "pe_rows": pe_rows,
         "price_charts": price_charts,
         "warnings": warnings,
         "fatal": fatal,
