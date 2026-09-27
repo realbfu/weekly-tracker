@@ -154,7 +154,10 @@
     };
   }
   figs.forEach(function (f) {
-    Plotly.newPlot(f.id, f.fig.data, f.fig.layout, { responsive: true, displaylogo: false }).then(function () {
+    Plotly.newPlot(f.id, f.fig.data, f.fig.layout, {
+      responsive: true, displaylogo: false,
+      modeBarButtonsToRemove: ["zoomIn2d", "zoomOut2d", "lasso2d", "select2d", "autoScale2d"]
+    }).then(function () {
       Plotly.relayout(f.id, themeUpdate());
     });
   });

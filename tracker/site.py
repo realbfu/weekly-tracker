@@ -61,9 +61,10 @@ def price_chart_json(closes: pd.Series, title: str) -> str:
             line=dict(color=_COLORS[n], width=1.3),
         ))
     fig.update_layout(**_base_layout(title))
-    # 按鈕靠右上，避免與靠左的標題重疊
+    fig.update_layout(margin=dict(t=64))
+    # 按鈕靠右上；y 降低以免被固定在最上方的 Plotly 工具列擋住
     fig.update_xaxes(rangeselector=dict(
-        x=1, xanchor="right", y=1.12, yanchor="bottom",
+        x=1, xanchor="right", y=1.04, yanchor="bottom",
         buttons=[
             dict(count=3, label="3M", step="month", stepmode="backward"),
             dict(count=6, label="6M", step="month", stepmode="backward"),
