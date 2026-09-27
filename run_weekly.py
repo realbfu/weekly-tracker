@@ -12,6 +12,7 @@ import pandas as pd
 from tracker.bias import calc_bias
 from tracker.breadth_tw import compute_tw_breadth, load_history, update_history
 from tracker.breadth_us import compute_us_breadth
+from tracker.business_cycle import fetch_signal
 from tracker.config import (
     BIAS_TARGETS,
     CHART_TARGETS,
@@ -62,6 +63,13 @@ def main() -> int:
     except Exception as exc:
         fatal.append(f"台股上市市場寬度計算失敗：{exc}")
 
+    # ---- 景氣對策信號 ----
+    try:
+        business_cycle = fetch_signal()
+    except Exception as exc:
+        warnings.append(f"景氣對策信號取得失敗：{exc}")
+        business_cycle = None
+
     # ---- BIAS／PE ----
     daily_rows, daily_closes, pe_snapshot = [], {}, []
     for name, symbol in BIAS_TARGETS:
@@ -100,6 +108,7 @@ def main() -> int:
     path = render({
         "updated_at": now.strftime("%Y-%m-%d %H:%M"),
         "breadth": breadth,
+        "business_cycle": business_cycle,
         "bias_tables": bias_tables,
         "price_charts": price_charts,
         "warnings": warnings,

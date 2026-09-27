@@ -93,7 +93,10 @@ def tw_long_term_signal(b20: float, b60: float, b240: float) -> str:
 
 
 def zone_class(label: str) -> str:
-    """分區標籤對應的樣式：hot 過熱／頭部、good 偏多、warn 偏空／弱勢、cold 超賣／底部。"""
+    """分區標籤對應的樣式：hot 過熱／頭部、good 偏多、warn 偏空／弱勢、cold 超賣／底部。
+
+    也用於景氣對策信號燈號（紅／黃紅／綠／黃藍／藍）。
+    """
     return {
         "過熱": "hot",
         "階段性頭部": "hot",
@@ -103,4 +106,9 @@ def zone_class(label: str) -> str:
         "偏空": "warn",
         "超賣": "cold",
         "階段性底部": "cold",
+        "紅": "hot",
+        "黃紅": "warn",
+        "綠": "good",
+        "黃藍": "warn",
+        "藍": "cold",
     }.get(label, "")

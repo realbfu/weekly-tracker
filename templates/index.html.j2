@@ -67,7 +67,7 @@
 <body>
 <main>
   <h1>每週投資追蹤</h1>
-  <p class="sub">更新於 {{ updated_at }}（台北時間）　市場寬度、BIAS／PE、價格走勢</p>
+  <p class="sub">更新於 {{ updated_at }}（台北時間）　市場寬度、景氣對策信號、BIAS／PE、價格走勢</p>
 
   {% for msg in fatal %}<div class="banner hot">⚠ {{ msg }}</div>{% endfor %}
   {% for msg in warnings %}<div class="banner warn">注意：{{ msg }}</div>{% endfor %}
@@ -91,6 +91,22 @@
     {% if m.note %}<p class="meta">{{ m.note }}</p>{% endif %}
   </section>
   {% endfor %}
+
+  <h2>景氣對策信號</h2>
+  <section class="card">
+    {% if business_cycle %}
+    <div class="tiles">
+      <div class="tile">
+        <div class="label">綜合判斷分數 <span class="meta">資料月份 {{ business_cycle.date }}</span></div>
+        <div class="value">{{ business_cycle.score | fmt(0) }}</div>
+        <span class="badge {{ business_cycle.light | zone_class }}">{{ business_cycle.light }}燈</span>
+      </div>
+    </div>
+    <p class="meta">來源：國家發展委員會（政府資料開放平臺）。分數 9–45，燈號對應區間：藍 ≤16、黃藍 17–22、綠 23–31、黃紅 32–37、紅 ≥38。</p>
+    {% else %}
+    <p class="na">資料取得失敗</p>
+    {% endif %}
+  </section>
 
   <h2>BIAS／PE</h2>
   {% for t in bias_tables %}

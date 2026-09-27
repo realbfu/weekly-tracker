@@ -64,3 +64,8 @@ CHART_TARGETS = [
     ("SOXX", "SOXX"),
 ]
 CHART_MA = (20, 60, 200)
+
+# ---------- 景氣對策信號 ----------
+# 政府資料開放平台「景氣指標及燈號」資料集（國家發展委員會提供，每月更新）
+NDC_DATASET_API = "https://data.gov.tw/api/v2/rest/dataset/6099"
+NDC_ECO_CSV_NAME = "景氣指標與燈號.csv"
