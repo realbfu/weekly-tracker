@@ -1,9 +1,11 @@
 """台積電（2330）月營收與季度損益。
 
 資料來源：MOPS 公開資訊觀測站，透過 twmops 套件抓取。月營收由 twmops 直接算好
-MoM%／YoY%。季度損益（Q1～Q3）twmops 已把累計數字還原成單季數字；但 Q4 的
-XBRL 年報揭露的是「全年累計」而非單季（年報本身沒有單獨的 Q4 期間），須自行
-扣除同年 Q1+Q2+Q3 才是單季 Q4——這是台灣財報揭露格式的已知特性，非 bug。
+MoM%／YoY%。季度損益（營收／毛利／淨利／基本每股盈餘，Q1～Q3）twmops 已把累
+計數字還原成單季數字；但 Q4 的 XBRL 年報揭露的是「全年累計」而非單季（年報
+本身沒有單獨的 Q4 期間），須自行扣除同年 Q1+Q2+Q3 才是單季 Q4——這是台灣財報
+揭露格式的已知特性，非 bug（EPS 採業界慣用的「全年 EPS 減前三季 EPS」估算單
+季 EPS，嚴格來說會因加權股數些微差異而不完全精確，但這是通用作法）。
 毛利率／淨利率、季增（QoQ%）／年增（YoY%）由我們自己算，需要比對前一季與去
 年同季，故快取範圍會比實際顯示範圍多回補幾季（見 config.TSMC_QUARTERLY_FETCH_START，
 且需從年初 Q1 開始才能在算 Q4 時取得同年前三季）。
@@ -16,7 +18,7 @@ from __future__ import annotations
 
 import contextlib
 import io
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import pandas as pd
 from twmops import FinancialFetcher, RevenueFetcher
@@ -54,11 +56,20 @@ def fetch_monthly_revenue(year: int, month: int) -> dict:
     }
 
 
+def _find_basic_eps(facts: dict) -> Optional[float]:
+    """XBRL 基本每股盈餘的標籤名稱在不同分類法版本間可能略有差異，多找幾種寫法。"""
+    for key in ("BasicEarningsLossPerShare", "EarningsPerShareBasic", "BasicEarningsPerShare"):
+        if key in facts:
+            return facts[key]
+    return next((v for k, v in facts.items() if "PerShare" in k and "Basic" in k), None)
+
+
 def _fetch_statement_raw(year: int, quarter: int) -> dict:
     """單次 XBRL 查詢的原始結果；quarter=4 時這是「全年累計」，尚未扣除前三季。
 
-    XBRL 原始數字單位是新台幣元，換算成千元以對齊月營收（MOPS 開放資料慣例單位）——
-    已用「單季營收加總 = 對應三個月月營收加總」交叉驗證換算正確。
+    revenue／gross_profit／net_profit 的 XBRL 原始數字單位是新台幣元，換算成千元
+    以對齊月營收（MOPS 開放資料慣例單位）——已用「單季營收加總 = 對應三個月月營收
+    加總」交叉驗證換算正確。eps（每股盈餘）本身就是「元」，不需再換算。
     """
     with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
         stmt = _financial_fetcher.get_simplified_statement(
@@ -69,6 +80,7 @@ def _fetch_statement_raw(year: int, quarter: int) -> dict:
         "revenue": facts["Revenue"] / 1000,
         "gross_profit": facts.get("GrossProfit", facts.get("GrossProfitLossFromOperations")) / 1000,
         "net_profit": facts["ProfitLoss"] / 1000,
+        "eps": _find_basic_eps(facts),
     }
 
 
@@ -116,6 +128,7 @@ def update_quarterly_income(
     cache: dict = {
         (int(row.year), int(row.quarter)): {
             "revenue": row.revenue, "gross_profit": row.gross_profit, "net_profit": row.net_profit,
+            "eps": getattr(row, "eps", None),
         }
         for row in existing.itertuples()
     }
@@ -134,10 +147,15 @@ def update_quarterly_income(
                         if (y, pq) not in cache:
                             cache[(y, pq)] = _fetch_statement_raw(y, pq)
                         prior.append(cache[(y, pq)])
+                    prior_eps = [p["eps"] for p in prior]
                     row = {
                         "revenue": raw["revenue"] - sum(p["revenue"] for p in prior),
                         "gross_profit": raw["gross_profit"] - sum(p["gross_profit"] for p in prior),
                         "net_profit": raw["net_profit"] - sum(p["net_profit"] for p in prior),
+                        "eps": (
+                            None if raw["eps"] is None or any(e is None for e in prior_eps)
+                            else raw["eps"] - sum(prior_eps)
+                        ),
                     }
                 else:
                     row = raw

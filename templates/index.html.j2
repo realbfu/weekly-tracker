@@ -171,7 +171,7 @@
       <caption>季度損益（單季）</caption>
       <thead><tr>
         <th scope="col">季度</th><th scope="col">營收（千元）</th><th scope="col">毛利（千元）</th><th scope="col">毛利率</th>
-        <th scope="col">淨利（千元）</th><th scope="col">淨利率</th><th scope="col">QoQ%</th><th scope="col">YoY%</th>
+        <th scope="col">淨利（千元）</th><th scope="col">淨利率</th><th scope="col">EPS（元）</th><th scope="col">QoQ%</th><th scope="col">YoY%</th>
       </tr></thead>
       <tbody>
       {% for r in tsmc_quarterly %}
@@ -182,16 +182,17 @@
           <td>{{ r.gross_margin_pct | fmt(1) }}%</td>
           <td>{{ r.net_profit | fmt(0) }}</td>
           <td>{{ r.net_margin_pct | fmt(1) }}%</td>
+          <td class="{{ 'na' if r.eps is none else '' }}">{{ r.eps | fmt(2) }}</td>
           <td class="{{ 'na' if r.qoq_pct is none else '' }}">{{ r.qoq_pct | fmt(2, true) }}%</td>
           <td class="{{ 'na' if r.yoy_pct is none else '' }}">{{ r.yoy_pct | fmt(2, true) }}%</td>
         </tr>
       {% else %}
-        <tr><td class="na" colspan="8">資料取得失敗</td></tr>
+        <tr><td class="na" colspan="9">資料取得失敗</td></tr>
       {% endfor %}
       </tbody>
     </table>
   </section>
-  <p class="meta">資料來源：公開資訊觀測站（MOPS）。月營收僅揭露營收數字，毛利／淨利僅於季報公布；季度損益為單季數字（已還原累計數）。</p>
+  <p class="meta">資料來源：公開資訊觀測站（MOPS）。月營收僅揭露營收數字，毛利／淨利／EPS 僅於季報公布；季度損益為單季數字（已還原累計數，Q4 EPS 為全年 EPS 減前三季估算）。</p>
 
   <h2>價格走勢</h2>
   <div class="charts">
