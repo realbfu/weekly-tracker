@@ -68,7 +68,7 @@
 <body>
 <main>
   <h1>每週投資追蹤</h1>
-  <p class="sub">更新於 {{ updated_at }}（台北時間）　市場寬度、景氣對策信號、BIAS／PE、價格走勢</p>
+  <p class="sub">更新於 {{ updated_at }}（台北時間）　市場寬度、景氣對策信號、BIAS／PE、台積電營運、價格走勢</p>
 
   {% for msg in fatal %}<div class="banner hot">⚠ {{ msg }}</div>{% endfor %}
   {% for msg in warnings %}<div class="banner warn">注意：{{ msg }}</div>{% endfor %}
@@ -144,6 +144,54 @@
   </section>
   {% endfor %}
   <p class="meta"><span class="badge hot">紅</span> 正乖離超過門檻　<span class="badge cold">藍</span> 負乖離超過門檻　BIAS = (收盤 − 均線) ÷ 均線　PE 資料來源：Yahoo Finance</p>
+
+  <h2>台積電營運（2330）</h2>
+  <section class="card scroll">
+    <table>
+      <caption>月營收</caption>
+      <thead><tr>
+        <th scope="col">月份</th><th scope="col">營收（千元）</th><th scope="col">MoM%</th><th scope="col">YoY%</th>
+      </tr></thead>
+      <tbody>
+      {% for r in tsmc_monthly %}
+        <tr>
+          <th scope="row" style="color:var(--text);font-weight:500">{{ r.date }}</th>
+          <td>{{ r.revenue | fmt(0) }}</td>
+          <td class="{{ 'na' if r.mom_pct is none else '' }}">{{ r.mom_pct | fmt(2, true) }}%</td>
+          <td class="{{ 'na' if r.yoy_pct is none else '' }}">{{ r.yoy_pct | fmt(2, true) }}%</td>
+        </tr>
+      {% else %}
+        <tr><td class="na" colspan="4">資料取得失敗</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  <section class="card scroll">
+    <table>
+      <caption>季度損益（單季）</caption>
+      <thead><tr>
+        <th scope="col">季度</th><th scope="col">營收（千元）</th><th scope="col">毛利（千元）</th><th scope="col">毛利率</th>
+        <th scope="col">淨利（千元）</th><th scope="col">淨利率</th><th scope="col">QoQ%</th><th scope="col">YoY%</th>
+      </tr></thead>
+      <tbody>
+      {% for r in tsmc_quarterly %}
+        <tr>
+          <th scope="row" style="color:var(--text);font-weight:500">{{ r.year }}Q{{ r.quarter }}</th>
+          <td>{{ r.revenue | fmt(0) }}</td>
+          <td>{{ r.gross_profit | fmt(0) }}</td>
+          <td>{{ r.gross_margin_pct | fmt(1) }}%</td>
+          <td>{{ r.net_profit | fmt(0) }}</td>
+          <td>{{ r.net_margin_pct | fmt(1) }}%</td>
+          <td class="{{ 'na' if r.qoq_pct is none else '' }}">{{ r.qoq_pct | fmt(2, true) }}%</td>
+          <td class="{{ 'na' if r.yoy_pct is none else '' }}">{{ r.yoy_pct | fmt(2, true) }}%</td>
+        </tr>
+      {% else %}
+        <tr><td class="na" colspan="8">資料取得失敗</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  <p class="meta">資料來源：公開資訊觀測站（MOPS）。月營收僅揭露營收數字，毛利／淨利僅於季報公布；季度損益為單季數字（已還原累計數）。</p>
 
   <h2>價格走勢</h2>
   <div class="charts">

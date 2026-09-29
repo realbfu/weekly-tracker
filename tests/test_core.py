@@ -6,6 +6,7 @@ from tracker.bias import calc_bias
 from tracker.breadth import breadth_series, tw_long_term_signal, tw_zone, us_zone
 from tracker.breadth_tw import parse_mi_index
 from tracker.business_cycle import parse_signal_history
+from tracker.tsmc_financials import since, with_quarterly_growth
 
 
 def _series(values):
@@ -135,3 +136,30 @@ def test_parse_signal_history_all_missing_raises():
     csv_text = "Date,景氣對策信號綜合分數,景氣對策信號\n202608,-,-\n"
     with pytest.raises(RuntimeError):
         parse_signal_history(csv_text.encode("utf-8-sig"))
+
+
+def test_with_quarterly_growth_computes_margins_and_changes():
+    df = pd.DataFrame([
+        {"year": 2024, "quarter": 4, "revenue": 100.0, "gross_profit": 60.0, "net_profit": 40.0},
+        {"year": 2025, "quarter": 1, "revenue": 110.0, "gross_profit": 66.0, "net_profit": 44.0},
+        {"year": 2025, "quarter": 2, "revenue": 121.0, "gross_profit": 72.6, "net_profit": 48.4},
+        {"year": 2025, "quarter": 3, "revenue": 100.0, "gross_profit": 60.0, "net_profit": 40.0},
+        {"year": 2025, "quarter": 4, "revenue": 150.0, "gross_profit": 90.0, "net_profit": 60.0},
+    ])
+    out = with_quarterly_growth(df)
+    last = out.iloc[-1]
+    assert last["gross_margin_pct"] == pytest.approx(60.0)
+    assert last["net_margin_pct"] == pytest.approx(40.0)
+    assert last["qoq_pct"] == pytest.approx(50.0)  # 150 對比前一季（2025Q3）100
+    assert last["yoy_pct"] == pytest.approx(50.0)  # 150 對比去年同季（2024Q4）100
+    assert pd.isna(out.iloc[0]["yoy_pct"])  # 第一列沒有去年同季資料可比
+
+
+def test_since_filters_by_year_quarter():
+    df = pd.DataFrame([
+        {"year": 2024, "quarter": 4, "v": 1},
+        {"year": 2025, "quarter": 1, "v": 2},
+        {"year": 2025, "quarter": 4, "v": 3},
+    ])
+    out = since(df, 2025, 1)
+    assert list(out["v"]) == [2, 3]

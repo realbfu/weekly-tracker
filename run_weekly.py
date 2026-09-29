@@ -22,6 +22,9 @@ from tracker.config import (
     FX_OVERLAY_SYMBOL,
     FX_TARGET,
     TIMEZONE,
+    TSMC_MONTHLY_START,
+    TSMC_QUARTERLY_DISPLAY_START,
+    TSMC_QUARTERLY_FETCH_START,
     TW_BREADTH_LEVELS,
     TW_BREADTH_MA,
     US_BREADTH_LEVELS,
@@ -31,6 +34,14 @@ from tracker.history import append_snapshot
 from tracker.pe import fetch_pe
 from tracker.prices import fetch_close
 from tracker.site import breadth_chart_json, business_cycle_chart_json, price_chart_json, render
+from tracker.tsmc_financials import (
+    MONTHLY_FILE as TSMC_MONTHLY_FILE,
+    QUARTERLY_FILE as TSMC_QUARTERLY_FILE,
+    since,
+    update_monthly_revenue,
+    update_quarterly_income,
+    with_quarterly_growth,
+)
 
 
 def main() -> int:
@@ -109,6 +120,31 @@ def main() -> int:
         {"title": "日線 BIAS／PE", "unit": "日", "periods": DAILY_MA, "thresholds": DAILY_BIAS_THRESHOLDS, "rows": daily_rows},
     ]
 
+    # ---- 台積電月營收／季度損益 ----
+    tsmc_monthly, tsmc_quarterly = [], []
+    tsmc_monthly_new, tsmc_quarterly_new = pd.DataFrame(), pd.DataFrame()
+    try:
+        monthly_df, tsmc_monthly_new, warns = update_monthly_revenue(
+            today.year, today.month, start=TSMC_MONTHLY_START,
+        )
+        warnings.extend(warns)
+        tsmc_monthly = monthly_df.to_dict("records")
+    except Exception as exc:
+        warnings.append(f"台積電月營收取得失敗：{exc}")
+
+    try:
+        current_quarter = (today.month - 1) // 3 + 1
+        quarterly_df, tsmc_quarterly_new, warns = update_quarterly_income(
+            today.year, current_quarter, start=TSMC_QUARTERLY_FETCH_START,
+        )
+        warnings.extend(warns)
+        grown = with_quarterly_growth(quarterly_df)
+        display = since(grown, *TSMC_QUARTERLY_DISPLAY_START)
+        display = display.astype(object).where(display.notna(), None)
+        tsmc_quarterly = display.to_dict("records")
+    except Exception as exc:
+        warnings.append(f"台積電季報取得失敗：{exc}")
+
     # ---- 匯率（疊加在加權指數走勢圖）----
     fx_name, fx_symbol = FX_TARGET
     try:
@@ -135,6 +171,8 @@ def main() -> int:
         "business_cycle": business_cycle,
         "business_cycle_chart": business_cycle_chart,
         "bias_tables": bias_tables,
+        "tsmc_monthly": tsmc_monthly,
+        "tsmc_quarterly": tsmc_quarterly,
         "price_charts": price_charts,
         "warnings": warnings,
         "fatal": fatal,
@@ -156,6 +194,10 @@ def main() -> int:
     if breadth_snapshot:
         append_snapshot("breadth_history.csv", pd.DataFrame(breadth_snapshot), ["date", "market"])
     append_snapshot("pe_history.csv", pd.DataFrame(pe_snapshot), ["date", "symbol"])
+    if not tsmc_monthly_new.empty:
+        append_snapshot(TSMC_MONTHLY_FILE, tsmc_monthly_new, ["date"])
+    if not tsmc_quarterly_new.empty:
+        append_snapshot(TSMC_QUARTERLY_FILE, tsmc_quarterly_new, ["year", "quarter"])
     return 0
 
 

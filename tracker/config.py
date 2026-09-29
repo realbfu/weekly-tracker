@@ -73,3 +73,12 @@ FX_TARGET = ("USD/TWD", "USDTWD=X")
 # 政府資料開放平台「景氣指標及燈號」資料集（國家發展委員會提供，每月更新）
 NDC_DATASET_API = "https://data.gov.tw/api/v2/rest/dataset/6099"
 NDC_ECO_CSV_NAME = "景氣指標與燈號.csv"
+
+# ---------- 台積電營運（月營收／季度損益） ----------
+# 資料來源：MOPS 公開資訊觀測站，透過 twmops 套件抓取
+TSMC_STOCK_ID = "2330"
+TSMC_MONTHLY_START = (2025, 10)  # 月營收回補／顯示起點
+# 季報回補起點：從 2024 Q1 開始，一方面才夠算 2025 Q4 的年增（YoY%），
+# 一方面 Q4 的單季數字需扣除同年 Q1~Q3（年報揭露全年累計），須有完整年度
+TSMC_QUARTERLY_FETCH_START = (2024, 1)
+TSMC_QUARTERLY_DISPLAY_START = (2025, 4)  # 顯示起點：2025 Q4（對應 2025-10 之後）
