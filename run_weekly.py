@@ -23,7 +23,7 @@ from tracker.config import (
     FX_TARGET,
     TIMEZONE,
     TSMC_MONTHLY_START,
-    TSMC_QUARTERLY_DISPLAY_START,
+    TSMC_QUARTERLY_DISPLAY_QUARTERS,
     TSMC_QUARTERLY_FETCH_START,
     TW_BREADTH_LEVELS,
     TW_BREADTH_MA,
@@ -37,7 +37,6 @@ from tracker.site import breadth_chart_json, business_cycle_chart_json, price_ch
 from tracker.tsmc_financials import (
     MONTHLY_FILE as TSMC_MONTHLY_FILE,
     QUARTERLY_FILE as TSMC_QUARTERLY_FILE,
-    since,
     update_monthly_revenue,
     update_quarterly_income,
     with_quarterly_growth,
@@ -139,7 +138,7 @@ def main() -> int:
         )
         warnings.extend(warns)
         grown = with_quarterly_growth(quarterly_df)
-        display = since(grown, *TSMC_QUARTERLY_DISPLAY_START)
+        display = grown.tail(TSMC_QUARTERLY_DISPLAY_QUARTERS)
         display = display.astype(object).where(display.notna(), None)
         tsmc_quarterly = display.to_dict("records")
     except Exception as exc:

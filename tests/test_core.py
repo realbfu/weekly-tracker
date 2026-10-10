@@ -6,7 +6,7 @@ from tracker.bias import calc_bias
 from tracker.breadth import breadth_series, tw_long_term_signal, tw_zone, us_zone
 from tracker.breadth_tw import parse_mi_index
 from tracker.business_cycle import parse_signal_history
-from tracker.tsmc_financials import since, with_quarterly_growth
+from tracker.tsmc_financials import with_quarterly_growth
 
 
 def _series(values):
@@ -153,13 +153,3 @@ def test_with_quarterly_growth_computes_margins_and_changes():
     assert last["qoq_pct"] == pytest.approx(50.0)  # 150 對比前一季（2025Q3）100
     assert last["yoy_pct"] == pytest.approx(50.0)  # 150 對比去年同季（2024Q4）100
     assert pd.isna(out.iloc[0]["yoy_pct"])  # 第一列沒有去年同季資料可比
-
-
-def test_since_filters_by_year_quarter():
-    df = pd.DataFrame([
-        {"year": 2024, "quarter": 4, "v": 1},
-        {"year": 2025, "quarter": 1, "v": 2},
-        {"year": 2025, "quarter": 4, "v": 3},
-    ])
-    out = since(df, 2025, 1)
-    assert list(out["v"]) == [2, 3]

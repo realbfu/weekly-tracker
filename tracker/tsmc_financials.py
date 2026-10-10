@@ -178,9 +178,3 @@ def with_quarterly_growth(quarterly: pd.DataFrame) -> pd.DataFrame:
     out["qoq_pct"] = out["revenue"].pct_change(1) * 100
     out["yoy_pct"] = out["revenue"].pct_change(4) * 100
     return out
-
-
-def since(df: pd.DataFrame, year: int, quarter: int) -> pd.DataFrame:
-    """篩選出 year-quarter（含）之後的列，df 須含 year／quarter 欄位。"""
-    key = df["year"] * 4 + df["quarter"]
-    return df[key >= year * 4 + quarter].reset_index(drop=True)

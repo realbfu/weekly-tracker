@@ -81,4 +81,4 @@ TSMC_MONTHLY_START = (2025, 10)  # 月營收回補／顯示起點
 # 季報回補起點：從 2024 Q1 開始，一方面才夠算 2025 Q4 的年增（YoY%），
 # 一方面 Q4 的單季數字需扣除同年 Q1~Q3（年報揭露全年累計），須有完整年度
 TSMC_QUARTERLY_FETCH_START = (2024, 1)
-TSMC_QUARTERLY_DISPLAY_START = (2025, 4)  # 顯示起點：2025 Q4（對應 2025-10 之後）
+TSMC_QUARTERLY_DISPLAY_QUARTERS = 6  # 頁面顯示最近幾季
