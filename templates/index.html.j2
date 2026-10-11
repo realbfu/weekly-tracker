@@ -118,7 +118,7 @@
       <caption>{{ t.title }}</caption>
       <thead><tr>
         <th scope="col">標的</th><th scope="col">資料日</th><th scope="col">收盤</th>
-        {% for n in t.periods %}<th scope="col">{{ n }}{{ t.unit }} <span class="meta">±{{ t.thresholds[n] | fmt(0) }}%</span></th>{% endfor %}
+        {% for n in t.periods %}<th scope="col">MA{{ n }} <span class="meta">±{{ t.thresholds[n] | fmt(0) }}%</span></th>{% endfor %}
         <th scope="col">Trailing PE</th><th scope="col">Forward PE</th><th scope="col">備註</th>
       </tr></thead>
       <tbody>
@@ -129,7 +129,7 @@
           <td>{{ r.data.date }}</td><td>{{ r.data.close | fmt(2) }}</td>
           {% for n in t.periods %}
             {% set a = r.data.alert[n] %}
-            <td class="{{ a or '' }}{{ ' na' if r.data.bias[n] is none else '' }}">{{ r.data.bias[n] | fmt(2, true) }}%</td>
+            <td class="{{ a or '' }}{{ ' na' if r.data.bias[n] is none else '' }}">{{ r.data.ma[n] | fmt(2) }} <span class="meta">({{ r.data.bias[n] | fmt(2, true) }}%)</span></td>
           {% endfor %}
           {% else %}
           <td class="na" colspan="{{ 2 + t.periods | length }}">BIAS 取得失敗</td>
